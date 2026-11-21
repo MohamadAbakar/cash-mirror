@@ -1,0 +1,257 @@
+<title>Textcart</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: phone-style text thread on the left, the on-chain allowance it spends from on the right */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1d2320;
+  --muted: #5f6a64;
+  --line: #dde2dc;
+  --accent: #2f7d5b;
+  --accent-soft: #e3f1ea;
+  --me: #2f7d5b;
+  --me-ink: #ffffff;
+  --them: #e9ece7;
+  --bad: #b3412f;
+  --bad-soft: #f8e5e1;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131714; --surface: #1b211d; --ink: #e8ece9; --muted: #9aa69f; --line: #2c342f;
+    --accent: #5cc093; --accent-soft: #1f3329; --me: #2f7d5b; --me-ink: #ffffff; --them: #262e29;
+    --bad: #f08a76; --bad-soft: #3a2320; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131714; --surface: #1b211d; --ink: #e8ece9; --muted: #9aa69f; --line: #2c342f;
+  --accent: #5cc093; --accent-soft: #1f3329; --me: #2f7d5b; --me-ink: #ffffff; --them: #262e29;
+  --bad: #f08a76; --bad-soft: #3a2320; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 40px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: grid; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-size: clamp(28px, 5vw, 40px); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* phone */
+.phone { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; height: 600px; max-height: 80vh; min-height: 460px; }
+.phone-top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--display); font-weight: 700; }
+.who { display: grid; line-height: 1.2; }
+.who b { font-family: var(--display); font-weight: 500; }
+.who small { color: var(--muted); font-size: 12px; }
+.thread { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 82%; padding: 9px 13px; border-radius: 18px; white-space: pre-line; animation: pop .18s ease-out; }
+.msg.me { align-self: flex-end; background: var(--me); color: var(--me-ink); border-bottom-right-radius: 6px; }
+.msg.them { align-self: flex-start; background: var(--them); border-bottom-left-radius: 6px; }
+.msg.bad { background: var(--bad-soft); color: var(--ink); border: 1px solid var(--bad); }
+.cart { margin-top: 6px; display: grid; gap: 2px; font-size: 14px; }
+.cart div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.cart .total { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; font-weight: 600; }
+@keyframes pop { from { transform: translateY(4px); opacity: .4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .msg { animation: none; } .bar i { transition: none; } }
+.composer { border-top: 1px solid var(--line); padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; cursor: pointer; border-radius: 999px; padding: 8px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--me-ink); font-weight: 600; }
+button:disabled { opacity: .45; cursor: default; }
+
+/* allowance panel */
+.panel { display: grid; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
+.card h2 { font-family: var(--display); font-size: 17px; font-weight: 500; margin: 0; }
+.big { font-family: var(--display); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.big small { font-size: 15px; color: var(--muted); font-weight: 500; }
+.bar { height: 10px; border-radius: 999px; background: var(--them); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); transition: width .5s ease; }
+.rules { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rules li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.rules li span:last-child { font-family: var(--mono); font-size: 13px; text-align: right; }
+.log { display: grid; gap: 8px; font-size: 13px; }
+.log .row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+.pill { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.pill.no { background: var(--bad-soft); color: var(--bad); }
+.log code { font-family: var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { color: var(--muted); font-size: 13px; }
+.note { font-size: 13px; color: var(--muted); max-width: 70ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="tag">Workshop mockup · simulated · no real purchases</span>
+    <h1>Text it what you need. It shops within your on-chain budget.</h1>
+    <p class="lede">You text an agent. It builds a grocery cart and pays in USDC from an allowance you set on Solana. The program, not the agent, enforces the limits.</p>
+  </header>
+
+  <div class="grid">
+    <section class="phone" aria-label="Text thread with the shopping agent">
+      <div class="phone-top">
+        <div class="avatar" aria-hidden="true">T</div>
+        <div class="who"><b>Textcart</b><small>Shopping agent · spends from your allowance</small></div>
+      </div>
+      <div class="thread" id="thread" aria-live="polite"></div>
+      <div class="composer" id="composer"></div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <h2>This week's allowance</h2>
+        <div class="big" id="left">$75.00 <small>left of $75.00</small></div>
+        <div class="bar" role="progressbar" aria-label="Allowance remaining" id="barwrap" aria-valuemin="0" aria-valuemax="75"><i id="bar" style="width:100%"></i></div>
+      </div>
+      <div class="card">
+        <h2>Spending rules (stored on-chain)</h2>
+        <ul class="rules">
+          <li><span>Weekly cap</span><span>75 USDC</span></li>
+          <li><span>Max per order</span><span>60 USDC</span></li>
+          <li><span>Approved merchants</span><span>grocery, pharmacy</span></li>
+          <li><span>Who can change rules</span><span>your wallet only</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Payments</h2>
+        <div class="log" id="log"><p class="empty">No payments yet. Reply YES in the chat to approve the first cart.</p></div>
+      </div>
+      <p class="note">How it would work for real: a Solana program holds your USDC and the rules above. The agent has its own wallet that can only call <code>spend(amount, merchant)</code>, and the program rejects anything over the caps or to an unapproved merchant. Texting would run through a Telegram bot or Twilio SMS.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+const CAP = 75, PER_ORDER = 60;
+let spent = 0;
+const thread = document.getElementById('thread');
+const composer = document.getElementById('composer');
+const logEl = document.getElementById('log');
+
+const scenarios = {
+  date: {
+    label: 'Plan date night under $60',
+    ask: 'Plan a date night for Friday. Dinner at home, under $60.',
+    merchant: 'grocery',
+    items: [['Fresh tagliatelle', 6.49], ['Shrimp, 1 lb', 14.99], ['Bottle of red wine', 16.99], ['Tiramisu for two', 8.49], ['Candles', 6.99], ['Basil + parmesan', 3.45]],
+  },
+  basics: {
+    label: 'Restock the basics',
+    ask: "We're out of eggs, milk and coffee.",
+    merchant: 'grocery',
+    items: [['Eggs, dozen', 4.29], ['Milk, half gallon', 3.49], ['Ground coffee', 8.42]],
+  },
+  tv: {
+    label: 'Buy a $300 TV',
+    ask: 'Actually, grab me a 55" TV too.',
+    merchant: 'electronics',
+    items: [['55" 4K TV', 299.00]],
+  },
+};
+const used = new Set();
+let pending = null;
+
+const money = n => '$' + n.toFixed(2);
+const total = s => s.items.reduce((a, [, p]) => a + p, 0);
+
+function bubble(who, html, extra = '') {
+  const d = document.createElement('div');
+  d.className = 'msg ' + who + (extra ? ' ' + extra : '');
+  d.innerHTML = html;
+  thread.appendChild(d);
+  thread.scrollTop = thread.scrollHeight;
+}
+function cartHtml(s) {
+  return '<div class="cart">' + s.items.map(([n, p]) => `<div><span>${n}</span><span>${money(p)}</span></div>`).join('') +
+    `<div class="total"><span>Total</span><span>${money(total(s))}</span></div></div>`;
+}
+function renderBudget() {
+  const left = CAP - spent;
+  document.getElementById('left').innerHTML = `${money(left)} <small>left of ${money(CAP)}</small>`;
+  document.getElementById('bar').style.width = (left / CAP * 100) + '%';
+  document.getElementById('barwrap').setAttribute('aria-valuenow', left.toFixed(2));
+}
+function logRow(ok, text) {
+  const empty = logEl.querySelector('.empty');
+  if (empty) empty.remove();
+  const sig = 'sim_' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 8);
+  const r = document.createElement('div');
+  r.className = 'row';
+  r.innerHTML = `<span class="pill ${ok ? '' : 'no'}">${ok ? 'paid' : 'rejected'}</span><span>${text}</span><code title="Simulated signature">${ok ? sig : 'tx failed'}</code>`;
+  logEl.prepend(r);
+}
+function setComposer() {
+  composer.innerHTML = '';
+  if (pending) {
+    const yes = document.createElement('button');
+    yes.className = 'primary'; yes.id = 'btn-yes'; yes.textContent = 'Reply YES';
+    yes.onclick = approve;
+    const no = document.createElement('button');
+    no.id = 'btn-no'; no.textContent = 'Reply NO';
+    no.onclick = () => { bubble('me', 'No, skip it.'); bubble('them', 'Got it. Nothing was charged.'); pending = null; setComposer(); };
+    composer.append(yes, no);
+    return;
+  }
+  for (const [key, s] of Object.entries(scenarios)) {
+    if (used.has(key)) continue;
+    const b = document.createElement('button');
+    b.id = 'btn-' + key; b.textContent = s.label;
+    b.onclick = () => ask(key);
+    composer.appendChild(b);
+  }
+  const reset = document.createElement('button');
+  reset.id = 'btn-reset'; reset.textContent = 'Start over';
+  reset.onclick = start;
+  composer.appendChild(reset);
+}
+function ask(key) {
+  const s = scenarios[key];
+  used.add(key);
+  bubble('me', s.ask);
+  bubble('them', `Here's a cart from your ${s.merchant} store:` + cartHtml(s) + '\nReply YES to pay from your allowance.');
+  pending = key;
+  setComposer();
+}
+function approve() {
+  const s = scenarios[pending];
+  const t = total(s);
+  const left = CAP - spent;
+  bubble('me', 'YES');
+  let reason = null;
+  if (s.merchant !== 'grocery' && s.merchant !== 'pharmacy') reason = `${s.merchant} isn't an approved merchant`;
+  else if (t > PER_ORDER) reason = `${money(t)} is over the ${money(PER_ORDER)} per-order cap`;
+  else if (t > left) reason = `${money(t)} is more than the ${money(left)} left this week`;
+  if (reason) {
+    bubble('them', `I tried, but the program rejected the payment: ${reason}. Change your rules from your own wallet if you really want this.`, 'bad');
+    logRow(false, `${s.label} · ${money(t)}`);
+  } else {
+    spent += t;
+    renderBudget();
+    bubble('them', `Paid ${money(t)} USDC. Delivery Friday 5–6pm. ${money(CAP - spent)} left this week.`);
+    logRow(true, `${s.label} · ${money(t)}`);
+  }
+  pending = null;
+  setComposer();
+}
+function start() {
+  spent = 0; used.clear(); pending = null;
+  thread.innerHTML = '';
+  logEl.innerHTML = '<p class="empty">No payments yet. Reply YES in the chat to approve the first cart.</p>';
+  renderBudget();
+  bubble('them', "Hi! Text me what you need. I'll build a cart and pay from your weekly allowance.");
+  ask('date');
+}
+start();
+</script>
